@@ -1,52 +1,30 @@
-// In this example, we assume you are using a database (e.g., MongoDB) and a session-based or token-based authentication system.
-import Cart from "../models/Cart"; // Import your Cart model (or whatever DB you're using)
+let cart = [];
 
-// Retrieve the user's cart from the database
-export const userCart = async (req, res) => {
-  try {
-    const userId = req.user.id; // Assuming req.user contains authenticated user's info
-    const userCart = await Cart.findOne({ userId });
-
-    if (!userCart) {
-      return res.status(404).json({ message: "Cart not found" });
-    }
-
-    res.json(userCart);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to retrieve cart", error });
+export const getCart = (req, res) => {
+  if (cart.length === 0) {
+    return res.status(200).json({ message: "Your cart is empty", cart });
   }
+
+  return res.status(200).json({ message: "Cart retrieved successfully", cart });
 };
 
-// Sync the user's cart (replace the current cart with the new one)
-export const userCartSync = async (req, res) => {
-  const { cartItems } = req.body;
+export const cartSync = (req, res) => {
+  const items = req.body; // Item []
 
-  if (!cartItems || !Array.isArray(cartItems)) {
-    return res.status(400).json({ message: "Invalid cart data" });
+  // Validate the request
+  if (!items) {
+    return res.status(400).json({ message: "Invalid cart item" });
   }
 
-  try {
-    const userId = req.user.id; // Assuming req.user contains authenticated user's info
-
-    // Find the cart for the user, or create a new one if it doesn't exist
-    let userCart = await Cart.findOne({ userId });
-
-    if (userCart) {
-      // Update the existing cart with new cart items
-      userCart.items = cartItems;
+  // Check if the item already exists in the cart
+  items.forEach((item) => {
+    const index = cart.findIndex((i) => i.id === item.id);
+    if (index !== -1) {
+      cart[index].quantity += item.quantity;
     } else {
-      // Create a new cart for the user
-      userCart = new Cart({
-        userId,
-        items: cartItems,
-      });
+      cart.push(item);
     }
+  });
 
-    // Save the updated or new cart to the database
-    await userCart.save();
-
-    res.json({ message: "Cart synced successfully", cart: userCart });
-  } catch (error) {
-    res.status(500).json({ message: "Failed to sync cart", error });
-  }
+  return res.json({ message: "Cart updated", cart });
 };

@@ -3,6 +3,7 @@ import cors from "cors";
 import productRoutes from "./server/routes/productRoutes.js";
 import authRoutes from "./server/routes/authRoutes.js";
 import orderRoutes from "./server/routes/orderRoutes.js";
+import card from "./server/routes/cartRoutes.js";
 
 const app = express();
 app.use(cors());
@@ -72,6 +73,7 @@ app.get("/", (req, res) => {
 app.use("/api/products", productRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/checkout", orderRoutes);
+app.use("/api/cart", card);
 
 const PORT = 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
