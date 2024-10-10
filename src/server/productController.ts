@@ -216,34 +216,198 @@ const products = [
   },
 ];
 
-export const getProducts = (req, res) => {
-  const allProducts = {
-    status: "success",
-    statusMessage: "All products fetched successfully",
-    statusCode: 200,
-    total: products.length,
-    data: products,
-  };
+// Dummy user data for login
+const users = [
+  {
+    id: "userId",
+    name: "Faysal Hossain",
+    email: "faysal@faysal.com",
+    password: "password",
+  },
+];
 
-  res.json(allProducts);
+// Login user
+export const loginUser = (req, res) => {
+  const { email, password } = req.body;
+
+  // Check if request body exists and contains valid fields
+  if (!email || !password) {
+    return res.status(400).json({ message: "Email and password are required" });
+  }
+
+  // Check if user exists
+  const user = users.find(
+    (user) => user.email === email && user.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({ message: "Invalid credentials" });
+  }
+
+  // Generate JWT token
+  const token = "your_secret_key";
+
+  // Return user info and token
+  res.status(200).json({
+    token,
+    user: { id: user.id, email: user.email, name: user.name },
+  });
 };
 
+export const user = (req, res) => {
+  return res.status(200).json({
+    message: "Welcome to the Docker!!! ",
+    user: users,
+  });
+};
+
+// Dummy cart storage (you should eventually replace this with actual DB storage)
+let userCartData = {} as any;
+
+// Get cart data for a user
+export const getCart = (req, res) => {
+  const cart = userCartData;
+
+  res.status(200).json({
+    message: "Cart retrieved successfully",
+    cart,
+  });
+};
+
+// Sync cart between guest and logged-in user
+// export const cartSync = (req, res) => {
+//   const { userId, cart } = req.body;
+
+//   // Merge existing user cart with guest cart
+//   const existingCart = userCartData[userId] || [];
+//   const mergedCart = cart.reduce(
+//     (acc, guestItem) => {
+//       const existingItem = acc.find((item) => item.id === guestItem.id);
+//       if (existingItem) {
+//         existingItem.quantity = Math.min(
+//           existingItem.quantity + guestItem.quantity,
+//           10
+//         ); // Max 10 quantity
+//       } else {
+//         acc.push(guestItem);
+//       }
+//       return acc;
+//     },
+//     [...existingCart]
+//   );
+
+//   // Save merged cart to "database"
+//   userCartData[userId] = mergedCart;
+
+//   // Return merged cart
+//   res.status(200).json({ cart: mergedCart });
+// };
+
+export const cartSync = (req, res) => {
+  const { userId, cart } = req.body;
+
+  // Validate input
+  if (!userId || !Array.isArray(cart)) {
+    return res.status(400).json({ error: "Invalid userId or cart data" });
+  }
+
+  try {
+    // Retrieve the existing user cart from in-memory storage
+    const existingCart = userCartData[userId] || [];
+
+    // Merge guest cart with user cart
+    const mergedCart = cart.reduce(
+      (acc, guestItem) => {
+        const existingItem = acc.find((item) => item.id === guestItem.id);
+        if (existingItem) {
+          existingItem.quantity = Math.min(
+            existingItem.quantity + guestItem.quantity,
+            10
+          ); // Max 10 quantity
+        } else {
+          acc.push(guestItem);
+        }
+        return acc;
+      },
+      [...existingCart]
+    );
+
+    // Save the merged cart to "database"
+    userCartData[userId] = mergedCart;
+
+    // Return the updated cart to the client
+    return res.status(200).json({ cart: mergedCart });
+  } catch (error) {
+    console.error("Cart sync error:", error);
+    return res.status(500).json({ error: "Failed to sync cart" });
+  }
+};
+
+// Orders storage
+let orders = [];
+
+// Checkout API
+export const checkout = (req, res) => {
+  const { cartItems, userId } = req.body;
+
+  if (!userId || !cartItems || cartItems.length === 0) {
+    return res
+      .status(400)
+      .json({ message: "User ID and cart items are required" });
+  }
+
+  const total = cartItems.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
+
+  const newOrder = {
+    id: orders.length + 1,
+    userId,
+    items: cartItems,
+    total,
+    date: new Date(),
+  };
+
+  orders.push(newOrder);
+
+  // Clear user cart after successful checkout
+  userCartData[userId] = [];
+
+  res
+    .status(200)
+    .json({ message: "Order processed successfully", order: newOrder });
+};
+
+// Get all products
+export const getProducts = (req, res) => {
+  res.status(200).json({
+    status: "success",
+    message: "All products fetched successfully",
+    data: products,
+  });
+};
+
+// Get a single product by ID
 export const getProductById = (req, res) => {
   const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ message: "Product ID is required" });
+  }
+
   const product = products.find((p) => p.id === id);
 
   if (!product) {
     return res.status(404).json({
       status: "error",
-      statusMessage: "Product not found",
-      statusCode: 404,
+      message: "Product not found",
     });
   }
 
-  res.json({
+  res.status(200).json({
     status: "success",
-    statusMessage: "Product found",
-    statusCode: 200,
+    message: "Product found",
     data: product,
   });
 };
