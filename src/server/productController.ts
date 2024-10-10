@@ -306,6 +306,8 @@ export const getCart = (req, res) => {
 export const cartSync = (req, res) => {
   const { userId, cart } = req.body;
 
+  console.log(req.body);
+
   // Validate input
   if (!userId || !Array.isArray(cart)) {
     return res.status(400).json({ error: "Invalid userId or cart data" });
