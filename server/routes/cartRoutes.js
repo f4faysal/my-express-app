@@ -1,9 +1,9 @@
-import express from 'express';
-import { getCart, cartSync } from '../controllers/cartController.js';
+import express from "express";
+import { getCart, cartSync } from "../controllers/cartController.js";
 
 const router = express.Router();
 
-router.get('/', getCart);  // Endpoint to get the cart
-router.post('/sync', cartSync); // Example endpoint to add items to the cart
+router.get("/", getCart); // Endpoint to get the cart
+router.post("/sync", cartSync); // Example endpoint to add items to the cart
 
-export default router;
+export const cartController = router;

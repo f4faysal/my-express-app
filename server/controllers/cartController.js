@@ -1,30 +1,40 @@
-let cart = [];
+// Dummy cart storage
+let userCartData = {};
 
 export const getCart = (req, res) => {
   if (cart.length === 0) {
-    return res.status(200).json({ message: "Your cart is empty", cart });
+    return res.status(200).json({ message: "Your cart is empty" });
   }
 
-  return res.status(200).json({ message: "Cart retrieved successfully", cart });
+  return res
+    .status(200)
+    .json({ message: "Cart retrieved successfully", userCartData });
 };
 
 export const cartSync = (req, res) => {
-  const items = req.body; // Item []
+  const { userId, cart } = req.body;
 
-  // Validate the request
-  if (!items) {
-    return res.status(400).json({ message: "Invalid cart item" });
-  }
+  // Merge existing user cart with guest cart
+  const existingCart = userCartData[userId] || [];
+  const mergedCart = cart.reduce(
+    (acc, guestItem) => {
+      const existingItem = acc.find((item) => item.id === guestItem.id);
+      if (existingItem) {
+        existingItem.quantity = Math.min(
+          existingItem.quantity + guestItem.quantity,
+          10
+        ); // Max 10 quantity
+      } else {
+        acc.push(guestItem);
+      }
+      return acc;
+    },
+    [...existingCart]
+  );
 
-  // Check if the item already exists in the cart
-  items.forEach((item) => {
-    const index = cart.findIndex((i) => i.id === item.id);
-    if (index !== -1) {
-      cart[index].quantity += item.quantity;
-    } else {
-      cart.push(item);
-    }
-  });
+  // Save to "database"
+  userCartData[userId] = mergedCart;
 
-  return res.json({ message: "Cart updated", cart });
+  // Return the merged cart
+  res.json({ cart: mergedCart });
 };

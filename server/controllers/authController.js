@@ -1,3 +1,5 @@
+
+
 const users = [
   {
     id: "123",
@@ -9,15 +11,23 @@ const users = [
 
 export const loginUser = (req, res) => {
   const { email, password } = req.body;
-  const user = users.find((u) => u.email === email && u.password === password);
+  const user = users.find(
+    (user) => user.email === email && user.password === password
+  );
 
-  if (user) {
-    res.json({
-      user: { id: user.id, name: user.name, email: user.email },
-      token: "fake-jwt-token",
-      isAuthenticated: true,
-    });
-  } else {
-    res.status(401).json({ message: "Invalid credentials" });
+  if (!user) {
+    return res.status(401).json({ message: "Invalid credentials" });
   }
+
+  // Generate JWT token
+  const token = sign({ userId: user.id }, "your_secret_key", {
+    expiresIn: "1h",
+  });
+
+  // Return user info and cart
+  res.json({
+    token,
+    user: { id: user.id, email: user.email },
+   
+  });
 };
